@@ -33,12 +33,39 @@ export const AuthProvider = ({children}) => {
             setUser(jwtDecode(data.access))
             navigate('/')
         } else {
-            alert('Something went wrong while logging in the user!')
+            alert('Something went wrong while logging in the user.')
+        }
+    }
+
+    let registerUser = async (userData) => {
+        try {
+            const response = await fetch('http://127.0.0.1:8000/api/register/', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userData),
+            });
+
+            const data = await response.json();
+            console.log('data sent for registering:', data)
+
+            if (data) {
+                localStorage.setItem('authTokens', JSON.stringify(data));
+                console.log('registered, data:', data);
+                setAuthTokens(data);
+                setUser(jwtDecode(data.access));
+                navigate('/');
+            } else {
+                alert('Something went wrong while registration.');
+            }
+        } catch (error) {
+            console.error('Error during registration:', error);
         }
     }
 
     let logoutUser = (e) => {
-        e.preventDefault()
+//        e.preventDefault()
         console.log('removing tokens from localStorage and logging out')
         localStorage.removeItem('authTokens')
         setAuthTokens(null)
@@ -76,18 +103,19 @@ export const AuthProvider = ({children}) => {
         authTokens: authTokens,
         loginUser: loginUser,
         logoutUser: logoutUser,
+        registerUser: registerUser,
     }
 
     useEffect(()=>{
-        if (loading) {
-            updateToken()
-        }
+//        if (loading) {
+//            updateToken()
+//        }
 
         const REFRESH_INTERVAL = 1000 * 60 * 4
         let interval = setInterval(()=>{
-            if(authTokens){
-                updateToken()
-            }
+//            if(authTokens){
+//                updateToken()
+//            }
         }, REFRESH_INTERVAL)
         return () => clearInterval(interval)
 

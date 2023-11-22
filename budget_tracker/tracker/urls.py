@@ -15,7 +15,7 @@ from .views import (
 )
 
 urlpatterns = [
-    path('registration/', registration_view, name='registration'),
+    path('register/', registration_view, name='registration'),
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),
     path('token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
