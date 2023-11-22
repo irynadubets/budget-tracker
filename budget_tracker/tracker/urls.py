@@ -11,12 +11,14 @@ from .views import (
     list_expense_view,
     update_expense_view,
     delete_expense_view,
+    CustomTokenRefreshView,
 )
 
 urlpatterns = [
     path('registration/', registration_view, name='registration'),
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),
+    path('token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
 
     path('add-income/', add_income_view, name='add-income'),
     path('list-income/', list_income_view, name='list-income'),

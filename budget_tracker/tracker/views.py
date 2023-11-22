@@ -5,6 +5,8 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.views import TokenRefreshView
+
 from .models import Income, Expense
 from .serializers import (
     RegistrationSerializer,
@@ -17,6 +19,21 @@ from .serializers import (
 User = get_user_model()
 
 
+class CustomTokenRefreshView(TokenRefreshView):
+    def post(self, request, *args, **kwargs):
+        refresh_token = request.data.get('refresh')
+        if not refresh_token:
+            return Response({'error': 'Refresh token not provided'}, status=status.HTTP_400_BAD_REQUEST)
+        refresh = RefreshToken(refresh_token)
+        access_token = refresh.access_token
+        response_data = {
+            'access': str(access_token),
+            'refresh': str(refresh),
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def registration_view(request):
@@ -27,7 +44,7 @@ def registration_view(request):
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
 
-        return Response({'access_token': access_token}, status=status.HTTP_201_CREATED)
+        return Response({'access': access_token}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -42,7 +59,7 @@ def login_view(request):
         access_token = str(refresh.access_token)
         refresh_token = str(refresh)
 
-        return Response({'access_token': access_token, 'refresh_token': refresh_token}, status=status.HTTP_200_OK)
+        return Response({'access': access_token, 'refresh': refresh_token}, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
 
 
@@ -50,7 +67,7 @@ def login_view(request):
 @permission_classes([IsAuthenticated])
 def logout_view(request):
     try:
-        refresh_token = request.data['refresh_token']
+        refresh_token = request.data['refresh']
         token = RefreshToken(refresh_token)
         token.blacklist()
 
