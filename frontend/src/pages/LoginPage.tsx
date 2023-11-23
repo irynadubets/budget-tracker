@@ -1,25 +1,66 @@
-import React, { FormEvent, useContext } from 'react';
+import React, { FormEvent, useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 const LoginPage: React.FC = () => {
-  const {loginUser} = useContext(AuthContext);
+  const { loginUser } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleRegisterLink = () => {
     navigate('/register');
   };
 
+  const handleTogglePasswordVisibility = () => {
+    setShowPassword((prevShowPassword) => !prevShowPassword);
+  };
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    loginUser(e);
+  };
+
   return (
-    <div>
-      <form onSubmit={loginUser}>
-        <input type="text" name="username" placeholder="Enter username" />
-        <input type="password" name="password" placeholder="Enter password" />
-        <input type="submit" value="Login" />
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80vh' }}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', minWidth: '300px', margin: 'auto' }}>
+        <TextField
+          type="text"
+          name="username"
+          label="Username"
+          variant="outlined"
+          margin="normal"
+          required
+        />
+        <TextField
+          type={showPassword ? 'text' : 'password'}
+          name="password"
+          label="Password"
+          variant="outlined"
+          margin="normal"
+          required
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={handleTogglePasswordVisibility} edge="end">
+                  {showPassword ? <Visibility /> : <VisibilityOff />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+        <Button type="submit" variant="contained" color="primary" style={{ marginTop: '16px' }}>
+          Login
+        </Button>
       </form>
 
-      <p>
-        Don't have an account?
+      <p style={{ textAlign: 'center', marginTop: '16px' }}>
+        Don't have an account?{' '}
         <span style={{ cursor: 'pointer', color: 'blue' }} onClick={handleRegisterLink}>
           Register here
         </span>

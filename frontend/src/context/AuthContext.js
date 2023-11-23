@@ -65,7 +65,6 @@ export const AuthProvider = ({children}) => {
     }
 
     let logoutUser = (e) => {
-//        e.preventDefault()
         console.log('removing tokens from localStorage and logging out')
         localStorage.removeItem('authTokens')
         setAuthTokens(null)

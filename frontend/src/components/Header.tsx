@@ -1,21 +1,35 @@
 import React, { useContext } from 'react';
-import { Link } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 const Header: React.FC = () => {
   const { user, logoutUser } = useContext(AuthContext);
 
   return (
-    <div>
-      <Link to="/">Home</Link>
-      <span> | </span>
-      {user ? (
-        <p onClick={logoutUser}>Logout</p>
-      ) : (
-        <Link to="/login">Login</Link>
-      )}
-      {user && <p>Hello {user.user_id}!</p>}
-    </div>
+    <AppBar position="static">
+      <Toolbar>
+        {user && (
+          <Typography variant="h6" component="div">
+            Home
+          </Typography>
+        )}
+        {user ? (
+          <>
+            <IconButton color="inherit" style={{ marginLeft: 'auto', marginRight: '10px' }} onClick={logoutUser}>
+              <LogoutIcon />
+            </IconButton>
+          </>
+        ) : (
+          <Typography variant="h6" component="div">
+            Login
+          </Typography>
+        )}
+      </Toolbar>
+    </AppBar>
   );
 };
 
