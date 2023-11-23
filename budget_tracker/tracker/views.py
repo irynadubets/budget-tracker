@@ -1,3 +1,4 @@
+from django.db.models import Sum
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -74,6 +75,27 @@ def login_view(request):
 
         return Response(response_data, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_data_view(request):
+    user = request.user
+    incomes = Income.objects.filter(user=user)
+    expenses = Expense.objects.filter(user=user)
+
+    income_total = incomes.aggregate(Sum('amount'))['amount__sum'] or 0
+    expense_total = expenses.aggregate(Sum('amount'))['amount__sum'] or 0
+
+    income_serializer = IncomeSerializer(incomes, many=True)
+    expense_serializer = ExpenseSerializer(expenses, many=True)
+
+    return Response({
+        'incomes': income_serializer.data,
+        'expenses': expense_serializer.data,
+        'incomeTotal': income_total,
+        'expenseTotal': expense_total,
+    })
 
 
 @api_view(['POST'])

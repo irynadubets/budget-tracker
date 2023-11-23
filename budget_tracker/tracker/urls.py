@@ -12,6 +12,7 @@ from .views import (
     update_expense_view,
     delete_expense_view,
     CustomTokenRefreshView,
+    user_data_view,
 )
 
 urlpatterns = [
@@ -29,4 +30,6 @@ urlpatterns = [
     path('list-expense/', list_expense_view, name='list-expense'),
     path('update-expense/<int:expense_id>/', update_expense_view, name='update-expense'),
     path('delete-expense/<int:expense_id>/', delete_expense_view, name='delete-expense'),
+
+    path('user-data/', user_data_view, name='user-data'),
 ]

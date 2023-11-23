@@ -11,6 +11,7 @@ export const AuthProvider = ({children}) => {
     let [user, setUser] = useState(() => (localStorage.getItem('authTokens') ? jwtDecode(localStorage.getItem('authTokens')) : null))
     let [authTokens, setAuthTokens] = useState(() => (localStorage.getItem('authTokens') ? JSON.parse(localStorage.getItem('authTokens')) : null))
     let [loading, setLoading] = useState(true)
+    let [balance, setBalance] = useState(0);
 
     const navigate = useNavigate()
 
@@ -35,6 +36,7 @@ export const AuthProvider = ({children}) => {
 
             let data = await response.json();
 
+            localStorage.setItem('username', data.username);
             localStorage.setItem('authTokens', JSON.stringify(data));
             setAuthTokens(data);
             setUser(data);
@@ -57,6 +59,7 @@ export const AuthProvider = ({children}) => {
         const data = await response.json();
 
         if (response.ok) {
+          localStorage.setItem('username', data.username);
           localStorage.setItem('authTokens', JSON.stringify(data));
           setAuthTokens(data);
           setUser(data);
@@ -75,6 +78,7 @@ export const AuthProvider = ({children}) => {
 
     let logoutUser = (e) => {
         localStorage.removeItem('authTokens')
+        localStorage.removeItem('username')
         setAuthTokens(null)
         setUser(null)
         navigate('/login')
@@ -89,8 +93,10 @@ export const AuthProvider = ({children}) => {
             body: JSON.stringify({ refresh : authTokens?.refresh })
         })
         const data = await response.json()
+        const storedUsername = localStorage.getItem('username');
 
-        if (response.status === 200) {
+        if (response.status === 200 && storedUsername) {
+            data.username = storedUsername;
             setAuthTokens(data)
             setUser(data)
             localStorage.setItem('authTokens', JSON.stringify(data))
@@ -103,16 +109,48 @@ export const AuthProvider = ({children}) => {
         }
     }
 
+    const fetchUserData = async () => {
+      try {
+        const storedTokens = JSON.parse(localStorage.getItem('authTokens'));
+
+        if (storedTokens) {
+          const response = await fetch('http://127.0.0.1:8000/api/user-data/', {
+            headers: {
+              Authorization: `Bearer ${storedTokens.access}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error('Unauthorized');
+          }
+
+          const userData = await response.json();
+
+          const incomeTotal = userData.incomeTotal || 0;
+          const expenseTotal = userData.expenseTotal || 0;
+
+          setBalance(incomeTotal - expenseTotal);
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+
     let contextData = {
         user: user,
         authTokens: authTokens,
         loginUser: loginUser,
         logoutUser: logoutUser,
         registerUser: registerUser,
+        fetchUserData: fetchUserData,
+        balance: balance,
+        setBalance: setBalance,
     }
 
     useEffect(()=>{
-        const REFRESH_INTERVAL = 1000 * 60 * 4
+        const REFRESH_INTERVAL = 1000 * 60 * 1
         let interval = setInterval(()=>{
             if(authTokens){
                 updateToken()
