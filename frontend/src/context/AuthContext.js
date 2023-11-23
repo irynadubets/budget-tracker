@@ -37,7 +37,7 @@ export const AuthProvider = ({children}) => {
 
             localStorage.setItem('authTokens', JSON.stringify(data));
             setAuthTokens(data);
-            setUser(jwtDecode(data.access));
+            setUser(data);
             navigate('/');
         } catch (error) {
             throw new Error('Invalid credentials. Please check your username and password.');
@@ -59,7 +59,7 @@ export const AuthProvider = ({children}) => {
         if (response.ok) {
           localStorage.setItem('authTokens', JSON.stringify(data));
           setAuthTokens(data);
-          setUser(jwtDecode(data.access));
+          setUser(data);
           navigate('/');
         } else {
           if (data.username && data.username.length > 0) {
@@ -92,7 +92,7 @@ export const AuthProvider = ({children}) => {
 
         if (response.status === 200) {
             setAuthTokens(data)
-            setUser(jwtDecode(data.access))
+            setUser(data)
             localStorage.setItem('authTokens', JSON.stringify(data))
         } else {
             logoutUser()
@@ -118,8 +118,17 @@ export const AuthProvider = ({children}) => {
                 updateToken()
             }
         }, REFRESH_INTERVAL)
-        return () => clearInterval(interval)
 
+        const storedTokens = JSON.parse(localStorage.getItem('authTokens'));
+        if (storedTokens && storedTokens.username) {
+            setUser(storedTokens);
+        }
+
+        if (loading) {
+            setLoading(false);
+        }
+
+        return () => clearInterval(interval);
     }, [authTokens, loading])
 
     return(
