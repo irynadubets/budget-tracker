@@ -7,11 +7,14 @@ import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
 
 const LoginPage: React.FC = () => {
   const { loginUser } = useContext(AuthContext);
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const handleRegisterLink = () => {
     navigate('/register');
@@ -21,9 +24,14 @@ const LoginPage: React.FC = () => {
     setShowPassword((prevShowPassword) => !prevShowPassword);
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    loginUser(e);
+    try {
+      await loginUser(e);
+      setLoginError(null);
+    } catch (error) {
+      setLoginError('Invalid credentials. Please check your username and password.');
+    }
   };
 
   return (
@@ -57,8 +65,13 @@ const LoginPage: React.FC = () => {
         <Button type="submit" variant="contained" color="primary" style={{ marginTop: '16px' }}>
           Login
         </Button>
+        {loginError && (
+          <Alert severity="error" style={{ marginTop: '16px', marginBottom: '16px', maxWidth: '300px' }}>
+            <AlertTitle>Login Error</AlertTitle>
+            {loginError}
+          </Alert>
+        )}
       </form>
-
       <p style={{ textAlign: 'center', marginTop: '16px' }}>
         Don't have an account?{' '}
         <span style={{ cursor: 'pointer', color: 'blue' }} onClick={handleRegisterLink}>

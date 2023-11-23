@@ -15,57 +15,65 @@ export const AuthProvider = ({children}) => {
     const navigate = useNavigate()
 
     let loginUser = async (e) => {
-        e.preventDefault()
-        const response = await fetch('http://127.0.0.1:8000/api/login/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({username: e.target.username.value, password: e.target.password.value })
-        });
+        e.preventDefault();
 
-        let data = await response.json();
+        try {
+            const response = await fetch('http://127.0.0.1:8000/api/login/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: e.target.username.value,
+                    password: e.target.password.value
+                })
+            });
 
-        if (data) {
+            if (!response.ok) {
+                throw new Error('Invalid credentials');
+            }
+
+            let data = await response.json();
+
             localStorage.setItem('authTokens', JSON.stringify(data));
-            console.log('logged in, response:', data)
-            setAuthTokens(data)
-            setUser(jwtDecode(data.access))
-            navigate('/')
-        } else {
-            alert('Something went wrong while logging in the user.')
+            setAuthTokens(data);
+            setUser(jwtDecode(data.access));
+            navigate('/');
+        } catch (error) {
+            throw new Error('Invalid credentials. Please check your username and password.');
         }
     }
 
     let registerUser = async (userData) => {
-        try {
-            const response = await fetch('http://127.0.0.1:8000/api/register/', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(userData),
-            });
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/register/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(userData),
+        });
 
-            const data = await response.json();
-            console.log('data sent for registering:', data)
+        const data = await response.json();
 
-            if (data) {
-                localStorage.setItem('authTokens', JSON.stringify(data));
-                console.log('registered, data:', data);
-                setAuthTokens(data);
-                setUser(jwtDecode(data.access));
-                navigate('/');
-            } else {
-                alert('Something went wrong while registration.');
-            }
-        } catch (error) {
-            console.error('Error during registration:', error);
+        if (response.ok) {
+          localStorage.setItem('authTokens', JSON.stringify(data));
+          setAuthTokens(data);
+          setUser(jwtDecode(data.access));
+          navigate('/');
+        } else {
+          if (data.username && data.username.length > 0) {
+            return `Username error: ${data.username[0]}`;
+          } else if (data.password && data.password.length > 0) {
+            return `Password error:\n${data.password.join('\n')}`;
+          }
         }
-    }
+      } catch (error) {
+        return 'Something went wrong during registration. Please try again.';
+      }
+    };
 
     let logoutUser = (e) => {
-        console.log('removing tokens from localStorage and logging out')
         localStorage.removeItem('authTokens')
         setAuthTokens(null)
         setUser(null)
@@ -83,12 +91,10 @@ export const AuthProvider = ({children}) => {
         const data = await response.json()
 
         if (response.status === 200) {
-            console.log('updating token, data:', data)
             setAuthTokens(data)
             setUser(jwtDecode(data.access))
             localStorage.setItem('authTokens', JSON.stringify(data))
         } else {
-            console.log('not updating token, logging out, data:', data)
             logoutUser()
         }
 
@@ -106,15 +112,11 @@ export const AuthProvider = ({children}) => {
     }
 
     useEffect(()=>{
-//        if (loading) {
-//            updateToken()
-//        }
-
         const REFRESH_INTERVAL = 1000 * 60 * 4
         let interval = setInterval(()=>{
-//            if(authTokens){
-//                updateToken()
-//            }
+            if(authTokens){
+                updateToken()
+            }
         }, REFRESH_INTERVAL)
         return () => clearInterval(interval)
 
