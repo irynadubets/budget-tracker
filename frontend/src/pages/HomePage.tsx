@@ -5,22 +5,55 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
+type ItemType = {
+  id: number;
+  amount: number;
+  description: string;
+};
+
 const HomePage: React.FC = () => {
-  const { user, fetchUserData, balance } = useContext(AuthContext);
-  const [incomeList, setIncomeList] = useState([{ id: 1, amount: 500, description: 'Salary' }]);
-  const [expenseList, setExpenseList] = useState([{ id: 1, amount: 200, description: 'Groceries' }]);
+  const { user, authTokens } = useContext(AuthContext);
+  const [incomeList, setIncomeList] = useState<ItemType[]>([]);
+  const [expenseList, setExpenseList] = useState<ItemType[]>([]);
   const [newIncome, setNewIncome] = useState({ amount: 0, description: '' });
   const [newExpense, setNewExpense] = useState({ amount: 0, description: '' });
   const [editItemId, setEditItemId] = useState<number | null>(null);
-  const [incomeSection, setIncomeSection] = useState('');
-  const [expenseSection, setExpenseSection] = useState('');
-
+  const [balance, setBalance] = useState(0);
+  const [incomeTotal, setIncomeTotal] = useState(0);
+  const [expenseTotal, setExpenseTotal] = useState(0);
 
   useEffect(() => {
     if (user) {
-      fetchUserData();
+      const fetchData = async () => {
+        try {
+          const response = await fetch('http://127.0.0.1:8000/api/user-data/', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${authTokens.access}`,
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch data');
+          }
+
+          const data = await response.json();
+          setIncomeList(data.incomes);
+          setExpenseList(data.expenses);
+
+          const incomeTotal = data.incomeTotal || 0;
+          const expenseTotal = data.expenseTotal || 0;
+          const calculatedBalance = incomeTotal - expenseTotal;
+          setBalance(calculatedBalance);
+        } catch (error) {
+          console.error('Error fetching data:', error);
+        }
+      };
+
+      fetchData();
     }
-  }, [user, fetchUserData]);
+  }, [user, authTokens.access]);
 
   const handleInputChange = (value: string, setter: React.Dispatch<React.SetStateAction<any>>) => {
     if (/^\d*$/.test(value)) {
@@ -28,30 +61,85 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const handleAddItem = (type: string) => {
-    if (type === 'income') {
-      setIncomeList([...incomeList, { id: incomeList.length + 1, ...newIncome }]);
-      setNewIncome({ amount: 0, description: '' });
-    } else {
-      setExpenseList([...expenseList, { id: expenseList.length + 1, ...newExpense }]);
-      setNewExpense({ amount: 0, description: '' });
+  const handleAddItem = async (type: string) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/add-${type}/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authTokens.access}`,
+        },
+        body: JSON.stringify(type === 'income' ? newIncome : newExpense),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to add item');
+      }
+  
+      const addedItem = await response.json();
+      if (type === 'income') {
+        setIncomeList([...incomeList, addedItem]);
+      } else {
+        setExpenseList([...expenseList, addedItem]);
+      }
+  
+    } catch (error) {
+      console.error('Error adding item:', error);
     }
   };
 
-  const handleEditItem = (type: string, id: number) => {
-    setEditItemId(id);
-    const editedItem = type === 'income' ? incomeList.find(item => item.id === id) : expenseList.find(item => item.id === id);
-
-    if (editedItem) {
-      type === 'income' ? setNewIncome({ amount: editedItem.amount, description: editedItem.description }) : setNewExpense({ amount: editedItem.amount, description: editedItem.description });
+  const handleEditItem = async (type: string, id: number) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/update-${type}/${id}/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authTokens.access}`,
+        },
+        body: JSON.stringify(type === 'income' ? newIncome : newExpense),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to edit item');
+      }
+  
+      const editedItem = await response.json();
+      const updatedList = type === 'income'
+        ? incomeList.map(item => (item.id === id ? editedItem : item))
+        : expenseList.map(item => (item.id === id ? editedItem : item));
+  
+      if (type === 'income') {
+        setIncomeList(updatedList);
+      } else {
+        setExpenseList(updatedList);
+      }
+  
+      setEditItemId(null);
+    } catch (error) {
+      console.error('Error editing item:', error);
     }
   };
 
-  const handleDeleteItem = (type: string, id: number) => {
-    if (type === 'income') {
-      setIncomeList(incomeList.filter(item => item.id !== id));
-    } else {
-      setExpenseList(expenseList.filter(item => item.id !== id));
+  const handleDeleteItem = async (type: string, id: number) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/delete-${type}/${id}/`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authTokens.access}`,
+        },
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to delete item');
+      }
+  
+      if (type === 'income') {
+        setIncomeList(incomeList.filter(item => item.id !== id));
+      } else {
+        setExpenseList(expenseList.filter(item => item.id !== id));
+      }
+    } catch (error) {
+      console.error('Error deleting item:', error);
     }
   };
 
