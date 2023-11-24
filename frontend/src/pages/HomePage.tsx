@@ -7,7 +7,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 
 type ItemType = {
   id: number;
-  amount: number;
+  amount: string;
   description: string;
 };
 
@@ -15,12 +15,25 @@ const HomePage: React.FC = () => {
   const { user, authTokens } = useContext(AuthContext);
   const [incomeList, setIncomeList] = useState<ItemType[]>([]);
   const [expenseList, setExpenseList] = useState<ItemType[]>([]);
-  const [newIncome, setNewIncome] = useState({ amount: 0, description: '' });
-  const [newExpense, setNewExpense] = useState({ amount: 0, description: '' });
+  const [newIncome, setNewIncome] = useState({ amount: '', description: '' });
+  const [newExpense, setNewExpense] = useState({ amount: '', description: '' });
   const [editItemId, setEditItemId] = useState<number | null>(null);
   const [balance, setBalance] = useState(0);
   const [incomeTotal, setIncomeTotal] = useState(0);
   const [expenseTotal, setExpenseTotal] = useState(0);
+
+  const calculateBalance = (incomeList: ItemType[], expenseList: ItemType[]) => {
+    const totalIncome = incomeList.reduce((sum, item) => sum + parseFloat(item.amount), 0 as number);
+    const totalExpense = expenseList.reduce((sum, item) => sum + parseFloat(item.amount), 0 as number);
+    setIncomeTotal(totalIncome);
+    setExpenseTotal(totalExpense);
+    return totalIncome - totalExpense;
+  };
+
+  const updateBalance = (newIncomeList: ItemType[], newExpenseList: ItemType[]) => {
+    const calculatedBalance = calculateBalance(newIncomeList, newExpenseList);
+    setBalance(calculatedBalance);
+  };
 
   useEffect(() => {
     if (user) {
@@ -44,8 +57,10 @@ const HomePage: React.FC = () => {
 
           const incomeTotal = data.incomeTotal || 0;
           const expenseTotal = data.expenseTotal || 0;
-          const calculatedBalance = incomeTotal - expenseTotal;
-          setBalance(calculatedBalance);
+
+          setIncomeTotal(incomeTotal);
+          setExpenseTotal(expenseTotal);
+          setBalance(incomeTotal - expenseTotal);
         } catch (error) {
           console.error('Error fetching data:', error);
         }
@@ -57,7 +72,7 @@ const HomePage: React.FC = () => {
 
   const handleInputChange = (value: string, setter: React.Dispatch<React.SetStateAction<any>>) => {
     if (/^\d*$/.test(value)) {
-      setter((prev: any) => ({ ...prev, amount: +value }));
+      setter((prev: any) => ({ ...prev, amount: value }));
     }
   };
 
@@ -74,14 +89,23 @@ const HomePage: React.FC = () => {
       if (!response.ok) {
         throw new Error('Failed to add item');
       }
-  
+
       const addedItem = await response.json();
       if (type === 'income') {
-        setIncomeList([...incomeList, addedItem]);
+        setIncomeList((prevIncomeList) => {
+          const newIncomeList = [...prevIncomeList, addedItem];
+          updateBalance(newIncomeList, expenseList);
+          return newIncomeList;
+        });
+        setNewIncome({ amount: '', description: '' });
       } else {
-        setExpenseList([...expenseList, addedItem]);
+        setExpenseList((prevExpenseList) => {
+          const newExpenseList = [...prevExpenseList, addedItem];
+          updateBalance(incomeList, newExpenseList);
+          return newExpenseList;
+        });
+        setNewExpense({ amount: '', description: '' });
       }
-  
     } catch (error) {
       console.error('Error adding item:', error);
     }
@@ -97,22 +121,25 @@ const HomePage: React.FC = () => {
         },
         body: JSON.stringify(type === 'income' ? newIncome : newExpense),
       });
-  
+
       if (!response.ok) {
         throw new Error('Failed to edit item');
       }
-  
+
       const editedItem = await response.json();
-      const updatedList = type === 'income'
-        ? incomeList.map(item => (item.id === id ? editedItem : item))
-        : expenseList.map(item => (item.id === id ? editedItem : item));
-  
       if (type === 'income') {
-        setIncomeList(updatedList);
+        setIncomeList((prevIncomeList) => {
+          const newIncomeList = prevIncomeList.map((item) => (item.id === id ? editedItem : item));
+          updateBalance(newIncomeList, expenseList);
+          return newIncomeList;
+        });
       } else {
-        setExpenseList(updatedList);
+        setExpenseList((prevExpenseList) => {
+          const newExpenseList = prevExpenseList.map((item) => (item.id === id ? editedItem : item));
+          updateBalance(incomeList, newExpenseList);
+          return newExpenseList;
+        });
       }
-  
       setEditItemId(null);
     } catch (error) {
       console.error('Error editing item:', error);
@@ -128,15 +155,23 @@ const HomePage: React.FC = () => {
           Authorization: `Bearer ${authTokens.access}`,
         },
       });
-  
+
       if (!response.ok) {
         throw new Error('Failed to delete item');
       }
-  
+
       if (type === 'income') {
-        setIncomeList(incomeList.filter(item => item.id !== id));
+        setIncomeList((prevIncomeList) => {
+          const newIncomeList = prevIncomeList.filter((item) => item.id !== id);
+          updateBalance(newIncomeList, expenseList);
+          return newIncomeList;
+        });
       } else {
-        setExpenseList(expenseList.filter(item => item.id !== id));
+        setExpenseList((prevExpenseList) => {
+          const newExpenseList = prevExpenseList.filter((item) => item.id !== id);
+          updateBalance(incomeList, newExpenseList);
+          return newExpenseList;
+        });
       }
     } catch (error) {
       console.error('Error deleting item:', error);
@@ -151,12 +186,12 @@ const HomePage: React.FC = () => {
       <Typography variant="h5" style={{ marginBottom: '20px' }}>
         Your Balance: ${balance.toFixed(2)}
       </Typography>
-  
+
       <Grid container spacing={3}>
         <Grid item xs={6}>
           <Paper elevation={3} style={{ marginTop: '20px' }}>
             <Typography variant="h5" mt={3} ml={3} style={{ marginBottom: '20px' }}>
-              Income:
+              Income: ${incomeTotal.toFixed(2)}
             </Typography>
             <Grid container spacing={2} alignItems="center">
               <Grid item xs={4}>
@@ -172,7 +207,7 @@ const HomePage: React.FC = () => {
                 <TextField
                   label="Amount"
                   variant="outlined"
-                  value={newIncome.amount === 0 ? '' : newIncome.amount}
+                  value={newIncome.amount}
                   onChange={(e) => handleInputChange(e.target.value, setNewIncome)}
                 />
               </Grid>
@@ -197,11 +232,11 @@ const HomePage: React.FC = () => {
             </List>
           </Paper>
         </Grid>
-  
+
         <Grid item xs={6}>
           <Paper elevation={3} style={{ marginTop: '20px' }}>
             <Typography variant="h5" mt={3} ml={3} style={{ marginBottom: '20px' }}>
-              Expenses:
+              Expenses: ${expenseTotal.toFixed(2)}
             </Typography>
             <Grid container spacing={2} alignItems="center">
               <Grid item xs={4}>
@@ -217,7 +252,7 @@ const HomePage: React.FC = () => {
                 <TextField
                   label="Amount"
                   variant="outlined"
-                  value={newExpense.amount === 0 ? '' : newExpense.amount}
+                  value={newExpense.amount}
                   onChange={(e) => handleInputChange(e.target.value, setNewExpense)}
                 />
               </Grid>
