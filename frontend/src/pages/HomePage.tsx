@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import AuthContext from '../context/AuthContext';
-import { Typography, Button, TextField, Paper, Grid, List, ListItem, ListItemText, IconButton } from '@mui/material';
+import { Typography, Button, TextField, Paper, Grid, List, ListItem, ListItemText, IconButton, Select, MenuItem } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -9,18 +9,23 @@ type ItemType = {
   id: number;
   amount: string;
   description: string;
+  section: string;
 };
 
 const HomePage: React.FC = () => {
   const { user, authTokens } = useContext(AuthContext);
   const [incomeList, setIncomeList] = useState<ItemType[]>([]);
   const [expenseList, setExpenseList] = useState<ItemType[]>([]);
-  const [newIncome, setNewIncome] = useState({ amount: '', description: '' });
-  const [newExpense, setNewExpense] = useState({ amount: '', description: '' });
+  const incomeSections = ['Salary', 'Freelance'];
+  const expenseSections = ['Food', 'Eating out', 'Home', 'Bad habits', 'Car', 'Transport', 'Health', 'Clothes', 'Gifts'];
+  const [newIncome, setNewIncome] = useState({ amount: '', description: '', section: '' });
+  const [newExpense, setNewExpense] = useState({ amount: '', description: '', section: '' });
   const [editItemId, setEditItemId] = useState<number | null>(null);
   const [balance, setBalance] = useState(0);
   const [incomeTotal, setIncomeTotal] = useState(0);
   const [expenseTotal, setExpenseTotal] = useState(0);
+  const [selectedIncomeSection, setSelectedIncomeSection] = useState<string>(incomeSections[0]);
+  const [selectedExpenseSection, setSelectedExpenseSection] = useState<string>(expenseSections[0]);
 
   const calculateBalance = (incomeList: ItemType[], expenseList: ItemType[]) => {
     const totalIncome = incomeList.reduce((sum, item) => sum + parseFloat(item.amount), 0 as number);
@@ -78,33 +83,37 @@ const HomePage: React.FC = () => {
 
   const handleAddItem = async (type: string) => {
     try {
+      const section = type === 'income' ? selectedIncomeSection : selectedExpenseSection;
+      console.log("section:", section);
       const response = await fetch(`http://127.0.0.1:8000/api/add-${type}/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${authTokens.access}`,
         },
-        body: JSON.stringify(type === 'income' ? newIncome : newExpense),
+        body: JSON.stringify(type === 'income' ? { ...newIncome, section } : { ...newExpense, section }),
       });
       if (!response.ok) {
         throw new Error('Failed to add item');
       }
+      console.log("newIncome:", newIncome);
 
       const addedItem = await response.json();
+      console.log("addedItem:", addedItem)
       if (type === 'income') {
         setIncomeList((prevIncomeList) => {
           const newIncomeList = [...prevIncomeList, addedItem];
           updateBalance(newIncomeList, expenseList);
           return newIncomeList;
         });
-        setNewIncome({ amount: '', description: '' });
+        setNewIncome({ amount: '', description: '', section: '' });
       } else {
         setExpenseList((prevExpenseList) => {
           const newExpenseList = [...prevExpenseList, addedItem];
           updateBalance(incomeList, newExpenseList);
           return newExpenseList;
         });
-        setNewExpense({ amount: '', description: '' });
+        setNewExpense({ amount: '', description: '', section: '' });
       }
     } catch (error) {
       console.error('Error adding item:', error);
@@ -211,9 +220,24 @@ const HomePage: React.FC = () => {
                   onChange={(e) => handleInputChange(e.target.value, setNewIncome)}
                 />
               </Grid>
-              <Grid item xs={3}>
-                <Button variant="contained" color="primary" onClick={() => handleAddItem('income')} startIcon={<AddCircleOutlineIcon />}>
-                  Add
+              <Grid item xs={4}>
+                <Select
+                  label="Section"
+                  value={selectedIncomeSection}
+                  onChange={(e) => setSelectedIncomeSection(e.target.value)}
+                >
+                  {incomeSections.map((section) => (
+                    <MenuItem key={section} value={section}>
+                      {section}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Grid>
+            </Grid>
+            <Grid container spacing={2} alignItems="center" justifyContent="center" marginTop="8px">
+              <Grid item xs={2}>
+                <Button variant="contained" color="primary" startIcon={<AddCircleOutlineIcon />} onClick={() => handleAddItem('income')}>
+                  ADD
                 </Button>
               </Grid>
             </Grid>
@@ -221,6 +245,7 @@ const HomePage: React.FC = () => {
               {[...incomeList].reverse().map((item) => (
                 <ListItem key={item.id}>
                   <ListItemText primary={`${item.description}: $${item.amount}`} />
+                  <Typography style={{ marginRight: 8 }}>{item.section}</Typography>
                   <IconButton color="primary" onClick={() => handleEditItem('income', item.id)}>
                     <EditIcon />
                   </IconButton>
@@ -256,9 +281,24 @@ const HomePage: React.FC = () => {
                   onChange={(e) => handleInputChange(e.target.value, setNewExpense)}
                 />
               </Grid>
-              <Grid item xs={3}>
-                <Button variant="contained" color="primary" onClick={() => handleAddItem('expense')} startIcon={<AddCircleOutlineIcon />}>
-                  Add
+              <Grid item xs={4}>
+                <Select
+                  label="Section"
+                  value={selectedExpenseSection}
+                  onChange={(e) => setSelectedExpenseSection(e.target.value)}
+                >
+                  {expenseSections.map((section) => (
+                    <MenuItem key={section} value={section}>
+                      {section}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Grid>
+            </Grid>
+            <Grid container spacing={2} alignItems="center" justifyContent="center" marginTop="8px">
+              <Grid item xs={2}>
+                <Button variant="contained" color="primary" startIcon={<AddCircleOutlineIcon />} onClick={() => handleAddItem('expense')}>
+                  ADD
                 </Button>
               </Grid>
             </Grid>
@@ -266,6 +306,7 @@ const HomePage: React.FC = () => {
               {[...expenseList].reverse().map((item) => (
                 <ListItem key={item.id}>
                   <ListItemText primary={`${item.description}: $${item.amount}`} />
+                  <Typography style={{ marginRight: 8 }}>{item.section}</Typography>
                   <IconButton color="primary" onClick={() => handleEditItem('expense', item.id)}>
                     <EditIcon />
                   </IconButton>
