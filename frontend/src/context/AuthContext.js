@@ -114,7 +114,7 @@ export const AuthProvider = ({children}) => {
         const storedTokens = JSON.parse(localStorage.getItem('authTokens'));
 
         if (storedTokens) {
-          const response = await fetch('http://127.0.0.1:8000/api/user-data/', {
+          const response = await fetch('http://127.0.0.1:8000/api/user-data/total/', {
             headers: {
               Authorization: `Bearer ${storedTokens.access}`,
               'Content-Type': 'application/json',

@@ -15,7 +15,7 @@ type CategoryResult = {
   [key: string]: number;
 };
 
-const StatisticsPage: React.FC = () => {
+const StatisticsPage: React.FC<{ period: string }> = ({ period }) => {
   const { authTokens } = useContext(AuthContext);
   const [statisticsData, setStatisticsData] = useState<any>({ incomes: [], expenses: [] });
 
@@ -28,7 +28,7 @@ const StatisticsPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:8000/api/user-data/', {
+        const response = await fetch(`http://127.0.0.1:8000/api/user-data/${period}/`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -48,7 +48,7 @@ const StatisticsPage: React.FC = () => {
     };
 
     fetchData();
-  }, []);
+  }, [period]);
 
   useEffect(() => {
     Chart.register(BarController, BarElement, LinearScale, CategoryScale);
@@ -97,18 +97,18 @@ const StatisticsPage: React.FC = () => {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-            x: {
-              ticks: {
-                autoSkip: false,
-                maxRotation: 30,
-                minRotation: 30,
-              },
-            },
-            y: {
-              beginAtZero: true,
-              max: maxY,
+          x: {
+            ticks: {
+              autoSkip: false,
+              maxRotation: 30,
+              minRotation: 30,
             },
           },
+          y: {
+            beginAtZero: true,
+            max: maxY,
+          },
+        },
       },
     });
 

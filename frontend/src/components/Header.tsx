@@ -29,9 +29,25 @@ const Header: React.FC = () => {
         <HomeIcon style={{ marginRight: '8px' }} />
         <ListItemText primary="Home" style={{ marginRight: '40px' }}  />
       </ListItem>
-      <ListItem button component={Link} to="/statistics" onClick={toggleDrawer(false)}>
+      <ListItem button component={Link} to="/statistics/day" onClick={toggleDrawer(false)}>
         <BarChartIcon style={{ marginRight: '8px' }} />
-        <ListItemText primary="Statistics" style={{ marginRight: '40px' }} />
+        <ListItemText primary="Day" style={{ marginRight: '40px' }} />
+      </ListItem>
+      <ListItem button component={Link} to="/statistics/week" onClick={toggleDrawer(false)}>
+        <BarChartIcon style={{ marginRight: '8px' }} />
+        <ListItemText primary="Week" style={{ marginRight: '40px' }} />
+      </ListItem>
+      <ListItem button component={Link} to="/statistics/month" onClick={toggleDrawer(false)}>
+        <BarChartIcon style={{ marginRight: '8px' }} />
+        <ListItemText primary="Month" style={{ marginRight: '40px' }} />
+      </ListItem>
+      <ListItem button component={Link} to="/statistics/year" onClick={toggleDrawer(false)}>
+        <BarChartIcon style={{ marginRight: '8px' }} />
+        <ListItemText primary="Year" style={{ marginRight: '40px' }} />
+      </ListItem>
+      <ListItem button component={Link} to="/statistics/total" onClick={toggleDrawer(false)}>
+        <BarChartIcon style={{ marginRight: '8px' }} />
+        <ListItemText primary="Total" style={{ marginRight: '40px' }} />
       </ListItem>
     </List>
   );

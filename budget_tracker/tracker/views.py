@@ -1,4 +1,6 @@
+from datetime import timedelta
 from django.db.models import Sum
+from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -82,10 +84,23 @@ def login_view(request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def user_data_view(request):
+def user_data_view(request, period):
     user = request.user
-    incomes = Income.objects.filter(user=user)
-    expenses = Expense.objects.filter(user=user)
+
+    def filter_data_by_period(items):
+        if period == 'day':
+            return items.filter(date__gte=timezone.now() - timedelta(days=1))
+        elif period == 'week':
+            return items.filter(date__gte=timezone.now() - timedelta(days=7))
+        elif period == 'month':
+            return items.filter(date__gte=timezone.now() - timedelta(days=30))
+        elif period == 'year':
+            return items.filter(date__gte=timezone.now() - timedelta(days=365))
+        else:
+            return items
+
+    incomes = filter_data_by_period(Income.objects.filter(user=user))
+    expenses = filter_data_by_period(Expense.objects.filter(user=user))
 
     income_total = incomes.aggregate(Sum("amount"))["amount__sum"] or 0
     expense_total = expenses.aggregate(Sum("amount"))["amount__sum"] or 0

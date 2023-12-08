@@ -34,7 +34,7 @@ urlpatterns = [
     path(
         "delete-expense/<int:expense_id>/", delete_expense_view, name="delete-expense"
     ),
-    path("user-data/", user_data_view, name="user-data"),
+    path("user-data/<str:period>/", user_data_view, name="user-data-period"),
     path("income-sections/", income_sections, name="income-sections"),
     path("expense-sections/", expense_sections, name="expense-sections"),
 ]

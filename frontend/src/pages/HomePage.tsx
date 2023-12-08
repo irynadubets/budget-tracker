@@ -44,7 +44,7 @@ const HomePage: React.FC = () => {
     if (user) {
       const fetchData = async () => {
         try {
-          const response = await fetch('http://127.0.0.1:8000/api/user-data/', {
+          const response = await fetch('http://127.0.0.1:8000/api/user-data/total/', {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
@@ -84,7 +84,6 @@ const HomePage: React.FC = () => {
   const handleAddItem = async (type: string) => {
     try {
       const section = type === 'income' ? selectedIncomeSection : selectedExpenseSection;
-      console.log("section:", section);
       const response = await fetch(`http://127.0.0.1:8000/api/add-${type}/`, {
         method: 'POST',
         headers: {
@@ -96,10 +95,8 @@ const HomePage: React.FC = () => {
       if (!response.ok) {
         throw new Error('Failed to add item');
       }
-      console.log("newIncome:", newIncome);
 
       const addedItem = await response.json();
-      console.log("addedItem:", addedItem)
       if (type === 'income') {
         setIncomeList((prevIncomeList) => {
           const newIncomeList = [...prevIncomeList, addedItem];

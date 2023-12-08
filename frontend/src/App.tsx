@@ -20,7 +20,11 @@ const App: React.FC = () => {
           <Route path="/" element={<PrivateRoute><HomePage /></PrivateRoute>} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/statistics" element={<PrivateRoute><StatisticsPage /></PrivateRoute>} />
+          <Route path="/statistics/day" element={<PrivateRoute><StatisticsPage period="day" /></PrivateRoute>} />
+          <Route path="/statistics/week" element={<PrivateRoute><StatisticsPage period="week" /></PrivateRoute>} />
+          <Route path="/statistics/month" element={<PrivateRoute><StatisticsPage period="month" /></PrivateRoute>} />
+          <Route path="/statistics/year" element={<PrivateRoute><StatisticsPage period="year" /></PrivateRoute>} />
+          <Route path="/statistics/total" element={<PrivateRoute><StatisticsPage period="total" /></PrivateRoute>} />
         </Routes>
         </AuthProvider>
       </Router>
