@@ -4,6 +4,7 @@ import { Typography, Button, TextField, Paper, Grid, List, ListItem, ListItemTex
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import CheckIcon from '@mui/icons-material/Check';
 
 type ItemType = {
   id: number;
@@ -26,6 +27,9 @@ const HomePage: React.FC = () => {
   const [expenseTotal, setExpenseTotal] = useState(0);
   const [selectedIncomeSection, setSelectedIncomeSection] = useState<string>(incomeSections[0]);
   const [selectedExpenseSection, setSelectedExpenseSection] = useState<string>(expenseSections[0]);
+  const [editDescription, setEditDescription] = useState('');
+  const [editAmount, setEditAmount] = useState('');
+  const [editSection, setEditSection] = useState('');
 
   const calculateBalance = (incomeList: ItemType[], expenseList: ItemType[]) => {
     const totalIncome = incomeList.reduce((sum, item) => sum + parseFloat(item.amount), 0 as number);
@@ -76,7 +80,8 @@ const HomePage: React.FC = () => {
   }, [user, authTokens.access]);
 
   const handleInputChange = (value: string, setter: React.Dispatch<React.SetStateAction<any>>) => {
-    if (/^\d*$/.test(value)) {
+    if (/^\d*\.?\d*$/.test(value)) {
+      console.log("passed check", typeof value);
       setter((prev: any) => ({ ...prev, amount: value }));
     }
   };
@@ -117,7 +122,18 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const handleEditItem = async (type: string, id: number) => {
+  const handleEditItem = (type: string, id: number) => {
+    const selectedItem = type === 'income' ? incomeList.find(item => item.id === id) : expenseList.find(item => item.id === id);
+    console.log("handleEditItem")
+    if (selectedItem) {
+      setEditDescription(selectedItem.description);
+      setEditAmount(selectedItem.amount);
+      setEditSection(selectedItem.section);
+      setEditItemId(id);
+    }
+  };
+
+  const handleSaveItem = async (type: string, id: number) => {
     try {
       const response = await fetch(`http://127.0.0.1:8000/api/update-${type}/${id}/`, {
         method: 'PUT',
@@ -125,7 +141,11 @@ const HomePage: React.FC = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${authTokens.access}`,
         },
-        body: JSON.stringify(type === 'income' ? newIncome : newExpense),
+        body: JSON.stringify({
+          description: editDescription,
+          amount: editAmount,
+          section: editSection,
+        }),
       });
 
       if (!response.ok) {
@@ -241,10 +261,47 @@ const HomePage: React.FC = () => {
             <List>
               {[...incomeList].reverse().map((item) => (
                 <ListItem key={item.id}>
-                  <ListItemText primary={`${item.description}: $${item.amount}`} />
-                  <Typography style={{ marginRight: 8 }}>{item.section}</Typography>
+                  {editItemId === item.id ? (
+                    <>
+                      <TextField
+                        label="Description"
+                        variant="outlined"
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                      />
+                      <TextField
+                        label="Amount"
+                        variant="outlined"
+                        value={editAmount}
+                        onChange={(e) => setEditAmount(e.target.value)}
+                      />
+                      <Select
+                        label="Section"
+                        value={editSection}
+                        onChange={(e) => setEditSection(e.target.value)}
+                      >
+                        {incomeSections.map((section) => (
+                          <MenuItem key={section} value={section}>
+                            {section}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      <IconButton color="primary" onClick={() => handleSaveItem('income', item.id)}>
+                        <CheckIcon />
+                      </IconButton>
+                    </>
+                  ) : (
+                    <>
+                      <ListItemText primary={`${item.description}: $${item.amount}`} />
+                      <Typography style={{ marginRight: 8 }}>{item.section}</Typography>
+                    </>
+                  )}
                   <IconButton color="primary" onClick={() => handleEditItem('income', item.id)}>
-                    <EditIcon />
+                    {editItemId === item.id ? (
+                      <></>
+                    ) : (
+                      <EditIcon />
+                    )}
                   </IconButton>
                   <IconButton color="secondary" onClick={() => handleDeleteItem('income', item.id)}>
                     <DeleteIcon />
@@ -302,10 +359,47 @@ const HomePage: React.FC = () => {
             <List>
               {[...expenseList].reverse().map((item) => (
                 <ListItem key={item.id}>
-                  <ListItemText primary={`${item.description}: $${item.amount}`} />
-                  <Typography style={{ marginRight: 8 }}>{item.section}</Typography>
+                  {editItemId === item.id ? (
+                    <>
+                      <TextField
+                        label="Description"
+                        variant="outlined"
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                      />
+                      <TextField
+                        label="Amount"
+                        variant="outlined"
+                        value={editAmount}
+                        onChange={(e) => setEditAmount(e.target.value)}
+                      />
+                      <Select
+                        label="Section"
+                        value={editSection}
+                        onChange={(e) => setEditSection(e.target.value)}
+                      >
+                        {expenseSections.map((section) => (
+                          <MenuItem key={section} value={section}>
+                            {section}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      <IconButton color="primary" onClick={() => handleSaveItem('expense', item.id)}>
+                        <CheckIcon />
+                      </IconButton>
+                    </>
+                  ) : (
+                    <>
+                      <ListItemText primary={`${item.description}: $${item.amount}`} />
+                      <Typography style={{ marginRight: 8 }}>{item.section}</Typography>
+                    </>
+                  )}
                   <IconButton color="primary" onClick={() => handleEditItem('expense', item.id)}>
-                    <EditIcon />
+                    {editItemId === item.id ? (
+                      <></>
+                    ) : (
+                      <EditIcon />
+                    )}
                   </IconButton>
                   <IconButton color="secondary" onClick={() => handleDeleteItem('expense', item.id)}>
                     <DeleteIcon />
